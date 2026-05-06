@@ -1,31 +1,27 @@
 '''
 conventions used:
-    c - cosine
-    s - sine
     t - translation
-    x, y, z - operations about x, y and axis respectively
-    cx, cy, cz - coincide with x, y and z axis respectively
-    xy, xz, yz - operation for xy, xz and yz plane respectively
+    c - coincide
     R - rotation
     P - plane
-
+    r - reverse
 '''
 
 import numpy as np
 
 np.set_printoptions(suppress=True, precision=9)
 
-theta = np.deg2rad(45)
-c, s = np.cos(theta), np.sin(theta)
-method = 1
+theta = np.deg2rad(30)
+cos, sin = np.cos(theta), np.sin(theta)
 
-dummy = np.array([
+M = np.array([
     [0, 2, 2, 0],
     [0, 0, 2, 2],
     [0, 0, 0, 0],
     [1, 1, 1, 1]
 ])
 
+#point1 and point2 are points on the vector about which rotaion is to occur
 point1 = np.array([
     [0],
     [2],
@@ -39,148 +35,161 @@ point2 = np.array([
     [1]
 ])
 
-step1 = np.array([
-    [-point1[0, 0]],
-    [-point1[1, 0]],
-    [-point1[2, 0]],
-    [0]
-])
-
+#Translation matrix to make point 1 coincide with origin
 t_matrix = np.array([
-    [1, 0, 0, -point1[0, 0]],  #1 0 0 0
-    [0, 1, 0, -point1[1, 0]],  #0 1 0 -2
-    [0, 0, 1, -point1[2, 0]],  #0 0 1 -2
+    [1, 0, 0, -point1[0, 0]], 
+    [0, 1, 0, -point1[1, 0]], 
+    [0, 0, 1, -point1[2, 0]], 
     [0, 0, 0, 1]
 ])
 
-t_matrix_r = np.array([
-    [1, 0, 0, point1[0, 0]],
-    [0, 1, 0, point1[1, 0]],
-    [0, 0, 1, point1[2, 0]],
-    [0, 0, 0, 1]
-])
+t_matrix_r = np.linalg.inv(t_matrix)
 
 #Causing one point to coincide with origin
-origin = point1 + step1
+origin = t_matrix@point1
 #Translating 2nd part by same magnitude
-hang = point2 + step1
+hang = t_matrix@point2
 
-#rotation for vector to lie on xy plane
-#have it about the x axis
-c_x = hang[1, 0]/np.sqrt(np.square(hang[1, 0])+np.square(hang[2, 0]))
-s_x = hang[2, 0]/np.sqrt(np.square(hang[1, 0])+np.square(hang[2, 0]))
+'''There are 12 possible ways the 7-step method can be done.
+We shall have 3 outlined here'''
+class Method1:
+    def __init__(self, matrix):
+        self.matrix = matrix
 
-P_xy = np.array([
-    [1, 0, 0, 0],
-    [0, c_x, s_x, 0],
-    [0, -s_x, c_x, 0],
-    [0, 0, 0, 1]
-])
+    def rotate(self):
+        #rotation for vector to lie on xy plane
+        #have it about the x axis
+        cos1 = hang[1, 0]/np.sqrt(np.square(hang[1, 0])+np.square(hang[2, 0]))
+        sin1 = hang[2, 0]/np.sqrt(np.square(hang[1, 0])+np.square(hang[2, 0]))
 
-#have vector coincide with y axis
-#rotates about z axis
-c_cz = np.sqrt(np.square(hang[1, 0])+np.square(hang[2, 0]))/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
-s_cz = hang[0, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
+        #rotation is in clockwise direction
+        P_align = np.array([
+            [1, 0, 0, 0],
+            [0, cos1, sin1, 0],
+            [0, -sin1, cos1, 0],
+            [0, 0, 0, 1]
+        ])
 
-R_cz = np.array([
-    [c_cz, -s_cz, 0, 0],
-    [s_cz, c_cz, 0, 0],
-    [0, 0, 1, 0],
-    [0, 0, 0, 1]
-])
+        #have vector coincide with y axis
+        #rotates about z axis
+        cos2 = np.sqrt(np.square(hang[1, 0])+np.square(hang[2, 0]))/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
+        sin2 = hang[0, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
 
-#rotate about y axis
-Ry = np.array([
-    [c, 0, s, 0],
-    [0, 1, 0, 0],
-    [-s, 0, c, 0],
-    [0, 0, 0, 1]
-])
+        R_c = np.array([
+            [cos2, -sin2, 0, 0],
+            [sin2, cos2, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
+        ])
 
-#reversing (cos remains same, sin change sign)
-R_cz_r = np.linalg.inv(R_cz)
+        #rotate about y axis
+        Ry = np.array([
+            [cos, 0, sin, 0],
+            [0, 1, 0, 0],
+            [-sin, 0, cos, 0],
+            [0, 0, 0, 1]
+        ])
 
-P_xy_r = np.linalg.inv(P_xy)
+        #reversing (cos remains same, sin change sign)
+        R_c_r = np.linalg.inv(R_c)
 
+        P_align_r = np.linalg.inv(P_align)
 
-#rotation for vector to lie on xz plane
-#have it about the z axis
-c_z = hang[0, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0]))
-s_z = hang[1, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0]))
+        return t_matrix_r@P_align_r@R_c_r@Ry@R_c@P_align@t_matrix@self.matrix
 
-P_xz = np.array([
-    [c_z, s_z, 0, 0],
-    [-s_z, c_z, 0, 0],
-    [0, 0, 1, 0],
-    [0, 0, 0, 1]
-])
+class Method2:
+    def __init__(self, matrix):
+        self.matrix = matrix
 
-#have vector coincide with x axis
-#rotates about y axis
-c_cy = np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0]))/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
-s_cy = hang[2, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
+    def rotate(self):
+        #rotation for vector to lie on xz plane
+        #have it about the z axis
+        cos1 = hang[0, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0]))
+        sin1 = hang[1, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0]))
 
-R_cy = np.array([
-    [c_cy, 0, s_cy, 0],
-    [0, 1, 0, 0],
-    [-s_cy, 0, c_cy, 0],
-    [0, 0, 0, 1]
-])
+        #rotation is in clockwise direction
+        P_align = np.array([
+            [cos1, sin1, 0, 0],
+            [-sin1, cos1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
+        ])
 
-#rotate about x axis
-Rx = np.array([
-    [1, 0, 0, 0],
-    [0, c, -s, 0],
-    [0, s, c, 0],
-    [0, 0, 0, 1]
-])
+        #have vector coincide with x axis
+        #rotates about y axis
+        cos2 = np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0]))/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
+        sin2 = hang[2, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
 
-#reversing (cos remains same, sin change sign)
-R_cy_r = np.linalg.inv(R_cy)
+        R_c = np.array([
+            [cos2, 0, sin2, 0],
+            [0, 1, 0, 0],
+            [-sin2, 0, cos2, 0],
+            [0, 0, 0, 1]
+        ])
 
-P_xz_r = np.linalg.inv(P_xz)
+        #rotate about x axis
+        Rx = np.array([
+            [1, 0, 0, 0],
+            [0, cos, -sin, 0],
+            [0, sin, cos, 0],
+            [0, 0, 0, 1]
+        ])
 
-#rotation for vector to lie on yz plane
-#have it about the y axis
-c_y = hang[2, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[2, 0]))
-s_y = hang[0, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[2, 0]))
+        #reversing (cos remains same, sin change sign)
+        R_c_r = np.linalg.inv(R_c)
 
-P_yz = np.array([
-    [c_y, 0, -s_y, 0],
-    [0, 1, 0, 0],
-    [s_y, 0, c_y, 0],
-    [0, 0, 0, 1]
-])
+        P_align_r = np.linalg.inv(P_aign)
 
-#have vector coincide with z axis
-#rotates about x axis
-c_cx = np.sqrt(np.square(hang[0, 0])+np.square(hang[2, 0]))/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
-s_cx = hang[1, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
+        return t_matrix_r@P_align_r@R_c_r@Rx@R_c@P_align@t_matrix@self.matrix
 
-R_cx = np.array([
-    [1, 0, 0, 0],
-    [0, c_cx, -s_cx, 0],
-    [0, s_cx, c_cx, 0],
-    [0, 0, 0, 1]
-])
+class Method3:
+    def __init__(self, matrix):
+        self.matrix = matrix
 
-#rotate about z axis
-Rz = np.array([
-    [c, -s, 0, 0],
-    [s, c, 0, 0],
-    [0, 0, 1, 0],
-    [0, 0, 0, 1]
-])
+    def rotate(self):    
+        #rotation for vector to lie on yz plane
+        #have it about the y axis
+        cos1 = hang[2, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[2, 0]))
+        sin1 = hang[0, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[2, 0]))
 
-#reversing (cos remains same, sin change sign)
-R_cx_r = np.linalg.inv(R_cx)
+        #rotation is in clockwise direction
+        P_align = np.array([
+            [cos1, 0, -sin1, 0],
+            [0, 1, 0, 0],
+            [sin1, 0, cos1, 0],
+            [0, 0, 0, 1]
+        ])
 
-P_yz_r = np.linalg.inv(P_yz)
+        #have vector coincide with z axis
+        #rotates about x axis
+        cos2 = np.sqrt(np.square(hang[0, 0])+np.square(hang[2, 0]))/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
+        sin2 = hang[1, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
 
-M1 = t_matrix_r@P_xy_r@R_cz_r@Ry@R_cz@P_xy@t_matrix@dummy
-M2 = t_matrix_r@P_xz_r@R_cy_r@Rx@R_cy@P_xz@t_matrix@dummy
-M3 = t_matrix_r@P_yz_r@R_cx_r@Rz@R_cx@P_yz@t_matrix@dummy
+        R_c = np.array([
+            [1, 0, 0, 0],
+            [0, cos2, -sin2, 0],
+            [0, sin2, cos2, 0],
+            [0, 0, 0, 1]
+        ])
 
-print(M1)
-print(M2)
-print(M3)
+        #rotate about z axis
+        Rz = np.array([
+            [cos, -sin, 0, 0],
+            [sin, cos, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
+        ])
+
+        #reversing (cos remains same, sin change sign)
+        R_c_r = np.linalg.inv(R_c)
+
+        P_align_r = np.linalg.inv(P_align)
+
+        return t_matrix_r@P_align_r@R_c_r@Rz@R_c@P_align@t_matrix@self.matrix
+
+first = Method1(M)
+print(first.rotate())
+first1 = Method2(M)
+print(first.rotate())
+first2 = Method3(M)
+print(first.rotate())
