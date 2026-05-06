@@ -138,7 +138,7 @@ class Method2:
         #reversing (cos remains same, sin change sign)
         R_c_r = np.linalg.inv(R_c)
 
-        P_align_r = np.linalg.inv(P_aign)
+        P_align_r = np.linalg.inv(P_align)
 
         return t_matrix_r@P_align_r@R_c_r@Rx@R_c@P_align@t_matrix@self.matrix
 
