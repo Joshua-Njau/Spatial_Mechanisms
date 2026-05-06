@@ -13,14 +13,16 @@ conventions used:
 
 import numpy as np
 
-theta = 360
+np.set_printoptions(suppress=True, precision=9)
+
+theta = np.deg2rad(45)
 c, s = np.cos(theta), np.sin(theta)
 method = 1
 
 dummy = np.array([
-    [1, 0, 0, 0],
-    [0, 1, 0, 0],
-    [0, 0, 1, 0],
+    [0, 2, 2, 0],
+    [0, 0, 2, 2],
+    [0, 0, 0, 0],
     [1, 1, 1, 1]
 ])
 
@@ -45,16 +47,16 @@ step1 = np.array([
 ])
 
 t_matrix = np.array([
-    [1, 0, 0, point1[0, 0]],
-    [0, 1, 0, point1[1, 0]],
-    [0, 0, 1, point1[2, 0]],
+    [1, 0, 0, -point1[0, 0]],  #1 0 0 0
+    [0, 1, 0, -point1[1, 0]],  #0 1 0 -2
+    [0, 0, 1, -point1[2, 0]],  #0 0 1 -2
     [0, 0, 0, 1]
 ])
 
 t_matrix_r = np.array([
-    [1, 0, 0, -point1[0, 0]],
-    [0, 1, 0, -point1[1, 0]],
-    [0, 0, 1, -point1[2, 0]],
+    [1, 0, 0, point1[0, 0]],
+    [0, 1, 0, point1[1, 0]],
+    [0, 0, 1, point1[2, 0]],
     [0, 0, 0, 1]
 ])
 
@@ -70,14 +72,15 @@ s_x = hang[2, 0]/np.sqrt(np.square(hang[1, 0])+np.square(hang[2, 0]))
 
 P_xy = np.array([
     [1, 0, 0, 0],
-    [0, c_x, -s_x, 0],
-    [0, s_x, c_x, 0],
+    [0, c_x, s_x, 0],
+    [0, -s_x, c_x, 0],
     [0, 0, 0, 1]
 ])
+
 #have vector coincide with y axis
 #rotates about z axis
-c_cz = hang[1, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
-s_cz = np.sqrt(np.square(hang[1, 0])+np.square(hang[2, 0]))/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
+c_cz = np.sqrt(np.square(hang[1, 0])+np.square(hang[2, 0]))/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
+s_cz = hang[0, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
 
 R_cz = np.array([
     [c_cz, -s_cz, 0, 0],
@@ -95,19 +98,9 @@ Ry = np.array([
 ])
 
 #reversing (cos remains same, sin change sign)
-R_cz_r = np.array([
-    [c_cz, s_cz, 0, 0],
-    [-s_cz, c_cz, 0, 0],
-    [0, 0, 1, 0],
-    [0, 0, 0, 1]
-])
+R_cz_r = np.linalg.inv(R_cz)
 
-P_xy_r = np.array([
-    [1, 0, 0, 0],
-    [0, c_x, s_x, 0],
-    [0, -s_x, c_x, 0],
-    [0, 0, 0, 1]
-])
+P_xy_r = np.linalg.inv(P_xy)
 
 
 #rotation for vector to lie on xz plane
@@ -116,15 +109,16 @@ c_z = hang[0, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0]))
 s_z = hang[1, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0]))
 
 P_xz = np.array([
-    [c_z, -s_z, 0, 0],
-    [s_z, c_z, 0, 0],
+    [c_z, s_z, 0, 0],
+    [-s_z, c_z, 0, 0],
     [0, 0, 1, 0],
     [0, 0, 0, 1]
 ])
+
 #have vector coincide with x axis
 #rotates about y axis
-c_cy = hang[2, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
-s_cy = np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0]))/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
+c_cy = np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0]))/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
+s_cy = hang[2, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
 
 R_cy = np.array([
     [c_cy, 0, s_cy, 0],
@@ -142,20 +136,9 @@ Rx = np.array([
 ])
 
 #reversing (cos remains same, sin change sign)
-R_cy_r = np.array([
-    [c_cy, 0, -s_cy, 0],
-    [0, 1, 0, 0],
-    [s_cy, 0, c_cy, 0],
-    [0, 0, 0, 1]
-])
+R_cy_r = np.linalg.inv(R_cy)
 
-P_xz_r = np.array([
-    [c_z, s_z, 0, 0],
-    [-s_z, c_z, 0, 0],
-    [0, 0, 1, 0],
-    [0, 0, 0, 1]
-])
-
+P_xz_r = np.linalg.inv(P_xz)
 
 #rotation for vector to lie on yz plane
 #have it about the y axis
@@ -163,16 +146,16 @@ c_y = hang[2, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[2, 0]))
 s_y = hang[0, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[2, 0]))
 
 P_yz = np.array([
-    [c_y, 0, s_y, 0],
+    [c_y, 0, -s_y, 0],
     [0, 1, 0, 0],
-    [-s_y, 0, c_y, 0],
+    [s_y, 0, c_y, 0],
     [0, 0, 0, 1]
 ])
 
 #have vector coincide with z axis
 #rotates about x axis
-c_cx = hang[1, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
-s_cx = np.sqrt(np.square(hang[0, 0])+np.square(hang[2, 0]))/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
+c_cx = np.sqrt(np.square(hang[0, 0])+np.square(hang[2, 0]))/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
+s_cx = hang[1, 0]/np.sqrt(np.square(hang[0, 0])+np.square(hang[1, 0])+np.square(hang[2, 0]))
 
 R_cx = np.array([
     [1, 0, 0, 0],
@@ -190,19 +173,9 @@ Rz = np.array([
 ])
 
 #reversing (cos remains same, sin change sign)
-R_cx_r = np.array([
-    [1, 0, 0, 0],
-    [0, c_cx, s_cx, 0],
-    [0, -s_cx, c_cx, 0],
-    [0, 0, 0, 1]
-])
+R_cx_r = np.linalg.inv(R_cx)
 
-P_yz_r = np.array([
-    [c_y, 0, -s_y, 0],
-    [0, 1, 0, 0],
-    [s_y, 0, c_y, 0],
-    [0, 0, 0, 1]
-])
+P_yz_r = np.linalg.inv(P_yz)
 
 M1 = t_matrix_r@P_xy_r@R_cz_r@Ry@R_cz@P_xy@t_matrix@dummy
 M2 = t_matrix_r@P_xz_r@R_cy_r@Rx@R_cy@P_xz@t_matrix@dummy
